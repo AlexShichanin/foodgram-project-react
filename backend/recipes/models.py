@@ -14,7 +14,7 @@ from users.models import User
 class Tag(models.Model):
     name = models.CharField('Название', unique=True, max_length=200)
     color = models.CharField(
-        'HEX-цвет',
+        'Цвет в HEX-код',
         unique=True,
         max_length=7,
         validators=[
@@ -155,7 +155,7 @@ class IngredientInRecipe(models.Model):
         return f'{self.recipe.name} - {self.ingredient.name}'
 
 
-class FavoriteAndShoppingCart(models.Model):
+class BaseShoppingCartAndFavorite(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -176,8 +176,8 @@ class FavoriteAndShoppingCart(models.Model):
         ]
 
 
-class ShoppingCart(FavoriteAndShoppingCart):
-    class Meta(FavoriteAndShoppingCart.Meta):
+class ShoppingCart(BaseShoppingCartAndFavorite):
+    class Meta(BaseShoppingCartAndFavorite.Meta):
         default_related_name = 'shopping_carts'
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
@@ -186,8 +186,8 @@ class ShoppingCart(FavoriteAndShoppingCart):
         return f'{self.user} добавил {self.recipe.name} в список покупок'
 
 
-class Favorite(FavoriteAndShoppingCart):
-    class Meta(FavoriteAndShoppingCart.Meta):
+class Favorite(BaseShoppingCartAndFavorite):
+    class Meta(BaseShoppingCartAndFavorite.Meta):
         default_related_name = 'favorites'
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
