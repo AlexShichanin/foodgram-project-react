@@ -1,6 +1,5 @@
 import re
 
-from django.core.exceptions import ValidationError
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
@@ -24,30 +23,6 @@ class Tag(models.Model):
                 flags=re.IGNORECASE)
         ])
     slug = models.SlugField('SLUG', unique=True, max_length=200)
-
-    def validate_unique_name(self, name_lower):
-        if self.__class__.objects.filter(
-                name__iexact=name_lower).exclude(pk=self.pk).exists():
-            raise ValidationError('Тег с таким названием уже существует!')
-
-    def validate_unique_color(self, color_lower):
-        if self.__class__.objects.filter(
-                color__iexact=color_lower).exclude(pk=self.pk).exists():
-            raise ValidationError('Тег с таким HEX-кодом уже существует!')
-
-    def validate_unique_slug(self, slug_lower):
-        if self.__class__.objects.filter(
-                slug__iexact=slug_lower).exclude(pk=self.pk).exists():
-            raise ValidationError('Тег с таким SLUG уже существует!')
-
-    def clean(self):
-        name = self.name.lower()
-        color = self.color.lower()
-        slug = self.slug.lower()
-
-        self.validate_unique_name(name)
-        self.validate_unique_color(color)
-        self.validate_unique_slug(slug)
 
     def save(self, *args, **kwargs):
         self.color = self.color.lower()
@@ -80,7 +55,7 @@ class Ingredient(models.Model):
         ]
 
     def __str__(self):
-        return (f'{self.name} - {self.measurement_unit}')
+        return f'{self.name} - {self.measurement_unit}'
 
 
 class Recipe(models.Model):
@@ -90,7 +65,7 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Автор'
     )
-    name = models.CharField('Название', max_length=200, unique=True)
+    name = models.CharField('Название', max_length=200)
     image = models.ImageField('Картинка', upload_to='recipes/images/')
     text = models.TextField('Описание')
     ingredients = models.ManyToManyField(
@@ -106,8 +81,8 @@ class Recipe(models.Model):
                 1,
                 message='Минимальное время приготовления 1 минута'),
             MaxValueValidator(
-                720,
-                message='Максимальное время приготовления 12 часов')
+                1440,
+                message='Максимальное время приготовления 24 чаcа.')
         ])
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
@@ -155,42 +130,55 @@ class IngredientInRecipe(models.Model):
         return f'{self.recipe.name} - {self.ingredient.name}'
 
 
-class BaseShoppingCartAndFavorite(models.Model):
+class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='shopping_carts',
         verbose_name='Пользователь',
 
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
+        related_name='shopping_carts',
         verbose_name='Рецепт',
     )
 
     class Meta:
-        abstract = True
-        constraints = [
-            models.UniqueConstraint(fields=('user', 'recipe'),
-                                    name='%(app_label)s_%(class)s_unique')
-        ]
-
-
-class ShoppingCart(BaseShoppingCartAndFavorite):
-    class Meta(BaseShoppingCartAndFavorite.Meta):
-        default_related_name = 'shopping_carts'
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
+        constraints = [models.UniqueConstraint(
+            fields=('user', 'recipe'),
+            name='shopping_carts_unique'
+        )]
 
     def __str__(self):
         return f'{self.user} добавил {self.recipe.name} в список покупок'
 
 
-class Favorite(BaseShoppingCartAndFavorite):
-    class Meta(BaseShoppingCartAndFavorite.Meta):
-        default_related_name = 'favorites'
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь',
+
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Рецепт',
+    )
+
+    class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
+        constraints = [models.UniqueConstraint(
+            fields=('user', 'recipe'),
+            name='favorites_unique'
+        )]
 
     def __str__(self):
         return f'{self.user} добавил {self.recipe.name} в избранное'

@@ -18,13 +18,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'recipes',
-    'users',
-    'api',
+
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
     'djoser'
+
+    'recipes',
+    'users',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +58,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -96,9 +97,7 @@ STATIC_ROOT = BASE_DIR / 'static'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -111,7 +110,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'api.pagination.Paginator',
     'PAGE_SIZE': 6,
 }
-
 
 DJOSER = {
     'LOGIN_FIELD': 'email',

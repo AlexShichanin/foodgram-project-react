@@ -55,7 +55,7 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = Paginator
-    lookup_field = 'id'
+    lookup_field = 'username'
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def subscribe(self, request, id=None):
@@ -95,25 +95,6 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         return serializer.save(author=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        cooking_time = request.data.get('cooking_time')
-        if cooking_time and int(cooking_time) > 720:
-            return Response(
-                {"error": ("Время приготовления не может превышать 12 час.")},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        serializer = CreateRecipeSerializer(instance=serializer.instance,
-                                            context={'request': self.request})
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED,
-            headers=self.get_success_headers(serializer.data)
-        )
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

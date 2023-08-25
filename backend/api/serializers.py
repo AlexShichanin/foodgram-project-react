@@ -9,9 +9,9 @@ from rest_framework.serializers import (
     ModelSerializer,
     PrimaryKeyRelatedField,
     ReadOnlyField,
-    SerializerMethodField
+    SerializerMethodField,
+    ValidationError
 )
-from rest_framework.validators import ValidationError
 
 from recipes.models import (
     Favorite,
@@ -36,17 +36,14 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        return (
-            user.is_authenticated and Follow.objects.filter(
-                user=user, author=obj.id).exists()
-        )
+        return (user.is_authenticated
+                and Follow.objects.filter(user=user,
+                                          author=obj.id).exists())
 
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'first_name',
                   'last_name', 'is_subscribed')
-
-    lookup_field = 'username'
 
 
 class TagSerializer(ModelSerializer):
@@ -98,25 +95,14 @@ class FollowSerializer(ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        return (
-            user.is_authenticated and Follow.objects.filter(
-                user=user, author=obj.id).exists()
-        )
+        return (user.is_authenticated
+                and Follow.objects.filter(user=user,
+                                          author=obj.id).exists())
 
     class Meta:
         model = Follow
         fields = ('id', 'username', 'first_name', 'last_name',
                   'is_subscribed', 'recipes', 'recipes_count')
-
-    def validate(self, data):
-        author = data.get('author')
-        user = self.context.get('request').user
-
-        if user == author:
-            raise ValidationError('Самоподписка запрещено!')
-        if Follow.objects.filter(user=user, author=author).exists():
-            raise ValidationError('Вы уже подписаны!')
-        return data
 
     def get_recipes(self, obj):
         request = self.context.get('request')
@@ -155,14 +141,14 @@ class GetRecipeSerializer(ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
         return (
-            user.is_authenticated and obj.shopping_carts.filter(
-                user=user).exists()
+                user.is_authenticated and obj.shopping_carts.filter(
+            user=user).exists()
         )
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
         return (
-            user.is_authenticated and obj.favorites.filter(user=user).exists()
+                user.is_authenticated and obj.favorites.filter(user=user).exists()
         )
 
 
@@ -177,13 +163,19 @@ class CreateRecipeSerializer(ModelSerializer):
         fields = ('id', 'name', 'tags', 'ingredients',
                   'text', 'image', 'cooking_time')
 
-    @staticmethod
-    def create_tags(tags, recipe):
+    def validate(self, data):
+        cooking_time = data.get('cooking_time')
+        if cooking_time and int(cooking_time) > 1440:
+            raise ValidationError(
+                'Время приготовления не может превышать 24 часа.'
+            )
+        return data
+
+    def create_tags(self, tags, recipe):
         for tag in tags:
             recipe.tags.add(tag)
 
-    @staticmethod
-    def create_ingredients(ingredients, recipe):
+    def create_ingredients(self, ingredients, recipe):
         for item in ingredients:
             IngredientInRecipe.objects.get_or_create(recipe=recipe,
                                                      ingredient=item['id'],
