@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import transaction
 from djoser.serializers import (
     UserCreateSerializer,
@@ -93,16 +94,16 @@ class FollowSerializer(ModelSerializer):
     recipes_count = SerializerMethodField()
     is_subscribed = SerializerMethodField()
 
+    class Meta:
+        model = Follow
+        fields = ('id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')
+
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
         return (user.is_authenticated
                 and Follow.objects.filter(user=user,
                                           author=obj.id).exists())
-
-    class Meta:
-        model = Follow
-        fields = ('id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
         request = self.context.get('request')
@@ -162,7 +163,8 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def validate(self, data):
         cooking_time = data.get('cooking_time')
-        if cooking_time and int(cooking_time) > 1440:
+        if (cooking_time
+                and int(cooking_time) > settings.INGREDIENT_MAX_VALUE):
             raise ValidationError(
                 'Время приготовления не может превышать 24 часа.'
             )
@@ -180,22 +182,22 @@ class CreateRecipeSerializer(ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
+        ingredients_items = validated_data.pop('ingredients')
+        tags_items = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        self.create_ingredients(ingredients, recipe)
-        self.create_tags(tags, recipe)
+        self.create_ingredients(ingredients_items, recipe)
+        self.create_tags(tags_items, recipe)
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
         instance.tags.clear()
         instance.ingredients.clear()
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        instance.tags.set(tags)
-        self.create_ingredients(ingredients, instance)
-        self.create_tags(tags, instance)
+        tags_items = validated_data.pop('tags')
+        ingredients_items = validated_data.pop('ingredients')
+        instance.tags.set(tags_items)
+        self.create_ingredients(ingredients_items, instance)
+        self.create_tags(tags_items, instance)
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):

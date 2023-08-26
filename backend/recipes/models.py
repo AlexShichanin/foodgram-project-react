@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
@@ -81,7 +82,7 @@ class Recipe(models.Model):
                 1,
                 message='Минимальное время приготовления 1 минута'),
             MaxValueValidator(
-                1440,
+                settings.INGREDIENT_MAX_VALUE,
                 message='Максимальное время приготовления 24 чаcа.')
         ])
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
@@ -99,13 +100,13 @@ class IngredientInRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredients_recipe',
+        related_name='recipe_ingredient',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredients_recipe',
+        related_name='recipe_ingredient',
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(

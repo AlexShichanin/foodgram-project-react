@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from decouple import AutoConfig
+from decouple import AutoConfig, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -9,7 +9,7 @@ config = AutoConfig(search_path=BASE_DIR)
 SECRET_KEY = config('SECRET_KEY', default='test-123', cast=str)
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default=['*'], cast=Csv())
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -61,8 +61,12 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql', cast=str),
+        'NAME': config('DB_NAME', default='postgres', cast=str),
+        'USER': config('POSTGRES_USER', default='postgres', cast=str),
+        'PASSWORD': config('POSTGRES_PASSWORD', default='1234', cast=str),
+        'HOST': config('DB_HOST', default='db', cast=str),
+        'PORT': config('DB_PORT', default='5432', cast=int)
     }
 }
 
@@ -124,3 +128,5 @@ DJOSER = {
         'user_create': 'api.serializers.CustomUserCreateSerializer',
     },
 }
+
+INGREDIENT_MAX_VALUE = 1440

@@ -8,7 +8,7 @@ from django_filters.rest_framework.filters import (
 from recipes.models import Ingredient, Recipe, Tag
 
 
-class IngredientsFilter(FilterSet):
+class IngredientFilter(FilterSet):
     name = CharFilter(lookup_expr='istartswith')
 
     class Meta:
@@ -16,12 +16,16 @@ class IngredientsFilter(FilterSet):
         fields = ('name',)
 
 
-class RecipesFilter(FilterSet):
+class RecipeFilter(FilterSet):
     tags = ModelMultipleChoiceFilter(queryset=Tag.objects.all(),
                                      to_field_name='slug',
                                      field_name='tags__slug')
     is_favorited = BooleanFilter(method='get_is_favorited')
     is_in_shopping_cart = BooleanFilter(method='get_is_in_shopping_cart')
+
+    class Meta:
+        model = Recipe
+        fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
     def get_is_in_shopping_cart(self, queryset, name, value):
         if value:
@@ -32,7 +36,3 @@ class RecipesFilter(FilterSet):
         if value:
             return queryset.filter(favorites__user=self.request.user)
         return queryset
-
-    class Meta:
-        model = Recipe
-        fields = ('tags', 'is_favorited', 'is_in_shopping_cart', 'author')

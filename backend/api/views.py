@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.filters import IngredientsFilter, RecipesFilter
+from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import CustomViewMixin
 from api.pagination import Paginator
 from api.permissions import IsAuthorOrAdminOrReadOnly
@@ -40,6 +40,7 @@ class TagViewSet(CustomViewMixin):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     permission_classes = (IsAuthorOrAdminOrReadOnly,)
+    pagination_class = None
 
 
 class IngredientViewSet(CustomViewMixin):
@@ -47,7 +48,8 @@ class IngredientViewSet(CustomViewMixin):
     serializer_class = IngredientSerializer
     permission_classes = (IsAuthorOrAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filterset_class = IngredientsFilter
+    filterset_class = IngredientFilter
+    pagination_class = None
 
 
 class CustomUserViewSet(UserViewSet):
@@ -55,7 +57,7 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = Paginator
-    lookup_field = 'username'
+    lookup_field = 'id'
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def subscribe(self, request, id=None):
@@ -86,7 +88,7 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipesFilter
+    filterset_class = RecipeFilter
     pagination_class = Paginator
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -139,7 +141,7 @@ class RecipeViewSet(ModelViewSet):
         shopping_cart_text = '\n'.join(shopping_cart_data)
 
         file = 'shopping_cart_list.txt'
-        headers = {'Content-Disposition': (f'attachment; filename={file}')}
+        headers = {'Content-Disposition': f'attachment; filename={file}'}
         return HttpResponse(shopping_cart_text,
                             content_type='text/plain; charset=UTF-8',
                             headers=headers)
