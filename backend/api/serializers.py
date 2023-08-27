@@ -161,7 +161,7 @@ class CreateRecipeSerializer(ModelSerializer):
         fields = ('id', 'name', 'tags', 'ingredients',
                   'text', 'image', 'cooking_time')
 
-    def validate(self, data):
+    def validate_cooking_time(self, data):
         cooking_time = data.get('cooking_time')
         if (cooking_time
                 and int(cooking_time) > settings.INGREDIENT_MAX_VALUE):
